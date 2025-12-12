@@ -10,7 +10,90 @@
 ```json
 {
   "formData": { 
-    /* fields vary by type. Details will be specified in the future*/
+    "marriage":{
+      "husband": {
+        "applicantInformation": {
+          "fullName": "",
+          "dateOfBirth": "",
+          "placeOfBirth": "",
+          "nationality": "",
+          "address": "",
+          "phoneNumber": "",
+          "emailAddress": ""
+        },
+        "witnessInformation": [
+          {
+            "fullName": "",
+            "relationship": "",
+            "contactNumber": "",
+            "address": ""
+          }
+        ]
+      },
+    
+      "wife": {
+        "applicantInformation": {
+          "fullName": "",
+          "dateOfBirth": "",
+          "placeOfBirth": "",
+          "nationality": "",
+          "address": "",
+          "phoneNumber": "",
+          "emailAddress": ""
+        },
+        "witnessInformation": [
+          {
+            "fullName": "",
+            "relationship": "",
+            "contactNumber": "",
+            "address": ""
+          }
+        ]
+      },
+    
+      "ceremonyDetails": {
+        "date": "",
+        "time": "",
+        "place": "",
+        "officiant": ""
+      }
+    },
+
+    "birth":{
+      "child": {
+        "firstName": "",
+        "middleName": "", //optional
+        "lastName": "",
+        "gender": "",
+        "date": "",
+        "time": "", //optional
+        "place": ""
+      },
+    
+      "mother": {
+        "firstName": "",
+        "lastName": "",
+        "date": "",
+        "nationality": "",
+        "occupation": "" //optional
+      },
+    
+      "father": {
+        "firstName": "",
+        "lastName": "",
+        "date": "",
+        "nationality": "",
+        "occupation": "" //optional
+      },
+    
+      "medicalFacility": {
+        "facilityName": "",
+        "attendingPhysician": "", //optional
+        "address": ""
+      }
+    }
+
+
   }
 }
 ````
