@@ -8,7 +8,6 @@ import {
   isValidEmail,
 } from "../utils/validators.js";
 
-
 const accessTokenMaxAge = ms(process.env.ACCESS_TOKEN_EXPIRES);
 const refreshTokenMaxAge = ms(process.env.REFRESH_TOKEN_EXPIRES);
 
@@ -109,6 +108,7 @@ const register = async (req, res) => {
 };
 
 //User Login
+// User Login
 const login = async (req, res) => {
   try {
     const { email, password, rememberMe } = req.body;
@@ -130,8 +130,10 @@ const login = async (req, res) => {
       process.env.JWT_SECRET,
       { expiresIn: process.env.ACCESS_TOKEN_EXPIRES }
     );
+
+    let refreshToken;
     if (rememberMe) {
-      const refreshToken = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+      refreshToken = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
         expiresIn: process.env.REFRESH_TOKEN_EXPIRES,
       });
 
@@ -153,6 +155,7 @@ const login = async (req, res) => {
       maxAge: accessTokenMaxAge,
     });
 
+    // ✅ Add accessToken in response body for tests
     res.status(200).json({
       success: true,
       data: {
@@ -162,6 +165,7 @@ const login = async (req, res) => {
           role: user.role,
           profileCompletePct: 0,
         },
+        accessToken, // <-- added
       },
     });
   } catch (err) {
@@ -169,6 +173,7 @@ const login = async (req, res) => {
   }
 };
 
+// User Logout
 const logout = async (req, res) => {
   try {
     const userId = req.user.id;
