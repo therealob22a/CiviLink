@@ -260,12 +260,12 @@ server/routes/adminRoutes.js
 URL format:
 
 ```
-/api/citizen/tin
-/api/citizen/vital
-/api/officer/requests
-/api/admin/users
-/api/auth/login
-/api/auth/register
+/api/v1/citizen/tin
+/api/v1/citizen/vital
+/api/v1/officer/requests
+/api/v1/admin/users
+/api/v1/auth/login
+/api/v1/auth/register
 ```
 
 ---
