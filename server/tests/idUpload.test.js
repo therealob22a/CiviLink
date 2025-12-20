@@ -14,7 +14,7 @@ import mongoose from "mongoose";
 import request from "supertest";
 import app from "../src/index.js";
 import User from "../src/models/User.js";
-import FaydaId from "../src/models/faydaIdShcema.js";
+import FaydaId from "../src/models/faydaIdSchema.js";
 import KebeleId from "../src/models/kebeleIdSchema.js";
 import connectTestDB from "../config/testDB.js";
 

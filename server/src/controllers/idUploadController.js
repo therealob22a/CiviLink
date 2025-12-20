@@ -1,6 +1,6 @@
 import { extractIdData } from "../services/ocr/ocr.service.js";
 import { deleteFile } from "../utils/fileCleanup.js";
-import FaydaId from "../models/faydaIdShcema.js"
+import FaydaId from "../models/faydaIdSchema.js"
 import KebeleId from "../models/kebeleIdSchema.js"
 
 const faydaOCR = async (req, res) => {
