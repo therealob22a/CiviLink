@@ -59,9 +59,7 @@ export const getConversations = async (req, res) => {
 
 export const getConversationById = async (req, res) => {
     try {
-        console.log("Conversation",req.conversation);
         const conversationId = req.conversation._id;
-        console.log("Conversation Id",conversationId)
         const officerId = req.user.id;
 
         const conversation = await Conversation.findById(conversationId);
