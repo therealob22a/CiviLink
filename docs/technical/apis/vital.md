@@ -91,9 +91,8 @@
         "attendingPhysician": "", //optional
         "address": ""
       }
-    }
-
-
+    },
+    "subCity":"Bole",
   }
 }
 ````
