@@ -1,4 +1,3 @@
-import UploadedID from "../models/UploadedID.js";
 import KebeleId from "../models/kebeleIdSchema.js";
 import FaydaId from "../models/faydaIdSchema.js";
 

@@ -25,7 +25,6 @@ import bcrypt from "bcryptjs";
 import app from "../src/index.js";
 import Officer from "../src/models/Officer.js";
 import Application from "../src/models/Application.js";
-import UploadedID from "../src/models/UploadedID.js";
 import FaydaId from "../src/models/faydaIdSchema.js";
 import KebeleId from "../src/models/kebeleIdSchema.js";
 import User from "../src/models/User.js";
