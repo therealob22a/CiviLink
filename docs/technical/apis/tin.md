@@ -29,8 +29,8 @@
         "city": "Addis Ababa",
         "region": "Addis Ababa",
         "postalCode": 1000 //Optional
-    }
-    
+    },
+    "subCity":"Bole",
   }
 }
 ````
