@@ -1,5 +1,5 @@
 import { extractIdData } from "../services/ocr/ocr.service.js";
-import { deleteFile } from "../utils/fileCleanup.js";
+import { deleteFile } from "../utils/fileCleanUp.js"; // corrected import path from fileCleanup to fileCleanUp
 import FaydaId from "../models/faydaIdSchema.js"
 import KebeleId from "../models/kebeleIdSchema.js"
 
