@@ -12,7 +12,6 @@ import officerRoutes from "./routes/officer.js";
 import idUploadRoutes from "./routes/idUpload.route.js";
 import chatRoutes from "./routes/chat.js";
 import paymentRoutes from "./routes/payment.js";
-
 import adminRoutes from "./routes/admin.js"
 
 const app = express();
@@ -33,7 +32,6 @@ app.use("/api/v1/officer", officerRoutes);
 app.use("/api/v1/user/id", idUploadRoutes);
 app.use("/api/v1/chats", chatRoutes);
 app.use("/api/v1/payments", paymentRoutes);
-
 app.use("/api/v1/admin", adminRoutes)
 
 // 404 handler
