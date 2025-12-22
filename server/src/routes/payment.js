@@ -4,7 +4,7 @@ import {
   downloadReceipt,
   processPayment,
   verifyPayment,
-} from "../controllers/paymentController";
+} from "../controllers/paymentController.js"; // Added missing import extension
 import { verifyToken, authorizeRoles } from "../middleware/authMiddleware.js";
 import express from "express";
 const router = express.Router();
