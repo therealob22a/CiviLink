@@ -105,7 +105,6 @@ export const postMessageToConversation = async (req, res) => {
 
         conversation.officerMessage = messageContent;
         conversation.status = 'closed';
-        conversation.officerMessageDate = new Date();
         await conversation.save();
 
         res.status(200).json({

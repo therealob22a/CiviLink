@@ -38,16 +38,12 @@ const conversationSchema = new mongoose.Schema({
     enum: ['pending', 'assigned', 'closed'], 
     default: 'pending' 
   },
-  citizenMessageDate:{
-    type: Date,
-    default: Date.now
-  },
-  officerMessageDate: Date,
-}, { 
-  timestamps: true,
-  
-});
+}, 
+  { timestamps: true } 
+);
 
+// Index to improve performance
+conversationSchema.index({updatedAt: 1});
 
 const Conversation = mongoose.model('Conversation', conversationSchema);
 
