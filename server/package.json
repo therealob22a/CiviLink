@@ -5,7 +5,10 @@
   "scripts": {
     "dev": "nodemon src/index.js",
     "start": "node src/index.js",
-    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --config jest.config.mjs --runInBand"
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --config jest.config.mjs --runInBand",
+    "seed": "node --env-file=.env tests/seed/runSeeds.js",
+    "clear": "node --env-file=.env tests/seed/clear.js",
+    "seed:fresh": "npm run clear && npm run seed"
   },
   "type": "module",
   "keywords": [],
@@ -34,6 +37,7 @@
     "uuid": "^13.0.0"
   },
   "devDependencies": {
+    "@faker-js/faker": "^10.1.0",
     "@types/jest": "^30.0.0",
     "cross-env": "^10.1.0",
     "jest": "^30.2.0",
