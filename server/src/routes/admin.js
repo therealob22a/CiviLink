@@ -1,6 +1,8 @@
 import express from "express";
 import { verifyToken, authorizeRoles } from "../middleware/authMiddleware.js";
-import { searchUser, assignOfficer } from "../controllers/adminController.js";
+import { searchUser, assignOfficer, createAdmin } from "../controllers/adminController.js";
+import { getPerformanceMetrics, getOfficerPerformance } from "../controllers/analyticsController.js";
+import { exportPerformanceReport } from "../controllers/analyticsExportController.js";
 
 const router = express.Router();
 
@@ -21,6 +23,25 @@ router.post(
     "/officers/assign",
     authorizeRoles("admin"),
     assignOfficer
-)
+);
+
+// Analytics Routes
+router.get(
+    "/metrics/performance",
+    authorizeRoles("admin"),
+    getPerformanceMetrics
+);
+
+router.get(
+    "/metrics/officers",
+    authorizeRoles("admin"),
+    getOfficerPerformance
+);
+
+router.get(
+    "/metrics/performance/download",
+    authorizeRoles("admin"),
+    exportPerformanceReport
+);
 
 export default router;
