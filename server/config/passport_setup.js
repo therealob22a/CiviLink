@@ -1,6 +1,8 @@
 import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import User from "../src/models/User.js";
+import dotenv from "dotenv";
+dotenv.config();
 
 // Only initialize Google OAuth if clientID and clientSecret exist
 if (process.env.clientID && process.env.clientSecret) {
