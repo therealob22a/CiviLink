@@ -20,11 +20,6 @@ import Application from "../src/models/Application.js";
 import Certificate from "../src/models/certificate.js";
 
 import bcrypt from "bcryptjs";
-import fs from "fs";
-
-/* ---------------- MOCK FILESYSTEM ---------------- */
-
-jest.spyOn(fs, "existsSync");
 
 /* ---------------- TEST SETUP ---------------- */
 
@@ -74,8 +69,6 @@ describe("Download Certificate API", () => {
   });
 
   beforeEach(async () => {
-    jest.clearAllMocks();
-
     await User.deleteMany({});
     await Application.deleteMany({});
     await Certificate.deleteMany({});
@@ -135,7 +128,7 @@ describe("Download Certificate API", () => {
       user: citizenId,
       application: applicationId,
       category: "TIN",
-      filePath: "/fake/path/certificate.pdf",
+      fileUrl: "/fake/path/certificate.pdf",
       issuedBy: officerId
     });
 
@@ -175,18 +168,7 @@ describe("Download Certificate API", () => {
         .toBe("You are not authorized to access this certificate");
     });
 
-    it("should return 500 if certificate file is missing", async () => {
-      fs.existsSync.mockReturnValue(false);
-
-      const res = await citizenAgent
-        .get(`/api/v1/applications/${applicationId}/download`);
-
-      expect(res.status).toBe(500);
-      expect(res.body.message).toBe("Certificate file missing");
-    });
-
     it("should successfully download certificate", async () => {
-      fs.existsSync.mockReturnValue(true);
 
       const res = await citizenAgent
         .get(`/api/v1/applications/${applicationId}/download`);
@@ -195,10 +177,6 @@ describe("Download Certificate API", () => {
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.message).toBe("File downloaded successfully!");
-
-      // Supertest sets this header for downloads 
-    //   expect(res.headers["content-disposition"])
-    //     .toContain("attachment");
     });
   });
 });

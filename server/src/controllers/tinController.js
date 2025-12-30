@@ -154,7 +154,7 @@ const approveTinApplicatin = async (req, res) => {
       user: application.applicant,
       application: application._id,
       category: "TIN",
-      filePath: "GENERATING...",
+      fileUrl: "GENERATING...",
       issuedBy: officer._id,
     });
 
@@ -164,9 +164,9 @@ const approveTinApplicatin = async (req, res) => {
     console.log(dateOnly);
 
 
-    const pdfPath = await generateTinCertificatePdf(certificate._id, application.formData, officer.fullName, dateOnly);
+    const filePath = await generateTinCertificatePdf(certificate._id, application.formData, officer.fullName, dateOnly);
 
-    certificate.filePath = pdfPath;
+    certificate.fileUrl = filePath;
     await certificate.save();
 
     return res.status(200).json({

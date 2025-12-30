@@ -1,28 +1,18 @@
 import PDFDocument from "pdfkit";
-import fs from "fs";
-import path from "path";
+import { supabase } from "../../../config/supabase.js";
 
 export const generateTinCertificatePdf = async (certificateId, formData, issuedBy, issuedDate) => {
   if (process.env.NODE_ENV === "test") {
     return "/fake/path/tin.pdf";
   } else {
-    const certificatesDir = path.join(
-      process.cwd(),
-      "certificates_pdfs",
-      "tin"
-    );
-
-    // Ensure directory exists
-    if (!fs.existsSync(certificatesDir)) {
-      fs.mkdirSync(certificatesDir, { recursive: true });
-    }
-
-    const filePath = path.join(certificatesDir, `${certificateId}.pdf`);
 
     const doc = new PDFDocument({ size: "A4", margin: 50 });
-    const stream = fs.createWriteStream(filePath);
 
-    doc.pipe(stream);
+    let buffers = [];
+
+    doc.on("data", (chunk) => buffers.push(chunk));
+    doc.on("end", () => {});
+
 
     // ---- PDF CONTENT ---- //
 
@@ -110,9 +100,21 @@ export const generateTinCertificatePdf = async (certificateId, formData, issuedB
 
     doc.end();
 
-    return new Promise((resolve, reject) => {
-      stream.on("finish", () => resolve(filePath));
-      stream.on("error", reject);
+    await new Promise((resolve) => doc.on("end", resolve));
+
+    const pdfBuffer = Buffer.concat(buffers);
+    const filePath = `certificates/tin/${certificateId}.pdf`;
+
+    // Upload to Supabase
+    const { error } = await supabase.storage
+      .from("certificates")
+      .upload(filePath, pdfBuffer, {
+        contentType: "application/pdf",
+        upsert: true,
     });
+
+    if (error) throw new Error(error.message);
+
+    return filePath;
   };
 };

@@ -35,7 +35,7 @@ const certificateSchema = new mongoose.Schema(
     },
 
     // Where the generated PDF is stored
-    filePath: {
+    fileUrl: {
       type: String,
       required: true,
     },

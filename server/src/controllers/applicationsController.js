@@ -1,6 +1,6 @@
 import Application from "../models/Application.js";
 import Certificate from "../models/certificate.js";
-import fs from "fs";
+import { supabase } from "../../config/supabase.js";
 
 const getAllApplications = async (req, res) => {
     try {
@@ -43,23 +43,19 @@ const downloadCertificate = async (req, res) => {
             });
         };
 
-        const filePath = certificate.filePath;
-
-        // File existence check
-        if (!fs.existsSync(filePath)) {
-            return res.status(500).json({
-                success: false,
-                message: "Certificate file missing",
-            });
-        }
-
         if (process.env.NODE_ENV === "test") {
             return res.status(200).json({
                 success: true,
                 message: "File downloaded successfully!"
             });
         } else {
-            res.status(200).download(filePath);
+            const { data, error } = await supabase.storage
+                .from("certificates")
+                .createSignedUrl(certificate.fileUrl, 60 * 60); // 1 hour expiry
+
+            if (error) throw new Error(error.message);
+
+            res.redirect(data.signedUrl);
         }
     } catch (err) {
         console.log(err.message);
