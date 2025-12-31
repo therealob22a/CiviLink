@@ -107,16 +107,17 @@
     "success": true,
     "data": [
         {
-            "_id": "695428731cecac7b52623516",
-            "title": "Alius doloribus suus cupio caecus.",
-            "content": "Subiungo adduco demulceo curtus vitium. Curso capto alienus nemo dicta explicabo sum antepono. Bardus repellat inventore stipes acceptus cruentus.\nCarcer aspernatur tamdiu ambulo molestiae desino delinquo qui. Venio acsi tendo tonsor vesco non tardus casus. Spes incidunt pel.",
+            "_id": "69550746a5a777f387f8569a",
+            "title": "CSS HOOKS",
+            "content": "hooksss yeah",
             "author": {
                 "_id": "695428711cecac7b52621ba0",
                 "fullName": "Grady Rippin MD"
             },
-            "headerImageUrl": null,
-            "createdAt": "2025-12-30T19:30:59.183Z",
-            "updatedAt": "2025-12-30T19:30:59.183Z"
+            "headerImageUrl": "test_1767180074694.png",
+            "createdAt": "2025-12-31T11:21:42.682Z",
+            "fullImageUrl": "https://gqbbatvjgkyvvvbkvthh.supabase.co/storage/v1/object/public/News/test_1767180074694.png",
+            "id": "69550746a5a777f387f8569a"
         }, ...
     ],
     "error": null
