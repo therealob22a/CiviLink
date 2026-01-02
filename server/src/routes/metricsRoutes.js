@@ -3,8 +3,8 @@ import {
   getSecurityLogs,
   exportSecurityLogsController,
   downloadExportedFile,
-} from "../controllers/securityController";
-import { authorizeRoles } from "../middleware/authMiddleware";
+} from "../controllers/securityController.js";
+import { authorizeRoles } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
