@@ -1,7 +1,7 @@
 import express from "express";
 import { verifyToken, authorizeRoles } from "../middleware/authMiddleware.js";
 import checkIdsUploaded from "../middleware/checkIdsUploaded.js";
-import { submitVitalApplication } from "../controllers/vitalController.js";
+import { submitVitalApplication, approveVitalApplication, rejectVitalApplication } from "../controllers/vitalController.js";
 import {assignApproverOfficer} from "../middleware/assignOfficer.js";
 
 const router = express.Router();
@@ -13,6 +13,20 @@ router.post(
   checkIdsUploaded,
   assignApproverOfficer,
   submitVitalApplication
+);
+
+router.post(
+  "/:type/applications/:id/approve",
+  verifyToken,
+  authorizeRoles("officer"),
+  approveVitalApplication
+);
+
+router.post(
+  "/:type/applications/:id/reject",
+  verifyToken,
+  authorizeRoles("officer"),
+  rejectVitalApplication
 );
 
 export default router;
