@@ -6,15 +6,15 @@
  * - Download certificate
  */
 
-import {apiRequest} from '../utils/api.js';
+import { apiRequest } from '../utils/api.js';
 
 /**
  * Get all applications for the current user
  * @returns {Promise<Object>} List of applications
  */
-export const getAllApplications = async () => {
-  return apiRequest('/applications', {
-    method: 'GET',
+export const getAllApplications = async (page = 1, limit = 10) => {
+  return apiRequest(`/applications?page=${page}&limit=${limit}`, {
+    method: "GET",
   });
 };
 

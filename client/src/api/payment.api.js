@@ -38,8 +38,8 @@ export const getPaymentStatus = async (id) => {
  * Get payment history (citizen)
  * @returns {Promise<Object>} History list
  */
-export const getPaymentHistory = async () => {
-    return apiRequest('/payments/history', {
+export const getPaymentHistory = async (page = 1, limit = 10) => {
+    return apiRequest(`/payments/history?page=${page}&limit=${limit}`, {
         method: 'GET',
     });
 };

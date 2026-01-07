@@ -12,8 +12,8 @@ import { apiRequest } from '../utils/api.js';
  * Get all applications assigned to the current officer
  * @returns {Promise<Object>} List of applications
  */
-export const getOfficerApplications = async () => {
-  return apiRequest('/officer/applications', {
+export const getOfficerApplications = async (page = 1, limit = 10) => {
+  return apiRequest(`/officer/applications?page=${page}&limit=${limit}`, {
     method: 'GET',
   });
 };
