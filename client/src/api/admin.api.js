@@ -1,5 +1,5 @@
 import { apiRequest } from '../utils/api.js';
-import { API_BASE_URL_LOCAL } from '../config/backend.js ';
+import { API_BASE_URL_LOCAL } from '../config/backend.js';
 
 /**
  * Search for users (citizens)
@@ -40,8 +40,13 @@ export const assignOfficer = async (assignmentData) => {
  * Get performance metrics
  * @returns {Promise<Object>} Performance metrics data
  */
-export const getPerformanceMetrics = async () => {
-  return apiRequest('/admin/metrics/performance', {
+export const getPerformanceMetrics = async (params = {}) => {
+  const queryParams = new URLSearchParams();
+  Object.keys(params).forEach(key => {
+    if (params[key]) queryParams.append(key, params[key]);
+  });
+  const queryString = queryParams.toString();
+  return apiRequest(`/admin/metrics/performance${queryString ? `?${queryString}` : ''}`, {
     method: 'GET',
   });
 };
@@ -50,8 +55,13 @@ export const getPerformanceMetrics = async () => {
  * Get officer performance data
  * @returns {Promise<Object>} Officer performance data
  */
-export const getOfficerPerformance = async () => {
-  return apiRequest('/admin/metrics/officers', {
+export const getOfficerPerformance = async (params = {}) => {
+  const queryParams = new URLSearchParams();
+  Object.keys(params).forEach(key => {
+    if (params[key]) queryParams.append(key, params[key]);
+  });
+  const queryString = queryParams.toString();
+  return apiRequest(`/admin/metrics/officers${queryString ? `?${queryString}` : ''}`, {
     method: 'GET',
   });
 };
@@ -60,8 +70,13 @@ export const getOfficerPerformance = async () => {
  * Export performance report as file
  * @returns {Promise<Blob>} Performance report file
  */
-export const exportPerformanceReport = async () => {
-  const url = `${API_BASE_URL_LOCAL}/admin/metrics/performance/download`;
+export const exportPerformanceReport = async (params = {}) => {
+  const queryParams = new URLSearchParams();
+  Object.keys(params).forEach(key => {
+    if (params[key]) queryParams.append(key, params[key]);
+  });
+  const queryString = queryParams.toString();
+  const url = `${API_BASE_URL_LOCAL}/admin/metrics/performance/download${queryString ? `?${queryString}` : ''}`;
 
   const response = await fetch(url, {
     method: 'GET',
@@ -99,8 +114,16 @@ export const getSecurityLogs = async (params = {}) => {
  * Export security logs to file (admin)
  * @returns {Promise<Object>} Export result with filename
  */
-export const exportSecurityLogs = async () => {
-  return apiRequest('/admin/security/export', {
+export const exportSecurityLogs = async (params = {}) => {
+  const queryParams = new URLSearchParams();
+  Object.keys(params).forEach(key => {
+    if (params[key] !== undefined && params[key] !== null) {
+      queryParams.append(key, params[key]);
+    }
+  });
+
+  const queryString = queryParams.toString();
+  return apiRequest(`/admin/security/export${queryString ? `?${queryString}` : ''}`, {
     method: 'GET',
   });
 };
