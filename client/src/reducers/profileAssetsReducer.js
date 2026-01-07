@@ -72,19 +72,21 @@ export const profileAssetsReducer = (state = initialState, action) => {
             };
 
         case profileAssetsActions.FETCH_ID_DATA_SUCCESS: {
-            const { faydaData, kebeleData } = action.payload.data || action.payload;
+            // Backend returns { success: true, data: { fayda: ..., kebele: ... } }
+            // apiRequest returns the full object.
+            const { fayda, kebele } = action.payload.data || action.payload;
 
             return {
                 ...state,
                 faydaId: {
-                    exists: !!faydaData,
-                    data: faydaData || null,
-                    uploadStatus: faydaData ? 'success' : 'idle',
+                    exists: !!fayda,
+                    data: fayda || null,
+                    uploadStatus: fayda ? 'success' : 'idle',
                 },
                 kebeleId: {
-                    exists: !!kebeleData,
-                    data: kebeleData || null,
-                    uploadStatus: kebeleData ? 'success' : 'idle',
+                    exists: !!kebele,
+                    data: kebele || null,
+                    uploadStatus: kebele ? 'success' : 'idle',
                 },
                 isLoading: false,
                 error: null,

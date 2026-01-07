@@ -9,11 +9,22 @@ import BirthForm from '../pages/user/BirthForm';
 import TIN from '../pages/user/TIN';
 import Settings from '../pages/user/Settings';
 import CitizenMessages from '../pages/user/CitizenMessages';
+import PaymentResult from '../pages/user/PaymentResult';
 
 function UserRoutes() {
     return (
         <div className="user-routes">
             <Routes>
+                {/* ... existing routes ... */}
+                <Route
+                    path='/user/payment-result'
+                    element={
+                        <AuthGuard>
+                            <PaymentResult />
+                        </AuthGuard>
+                    }
+                />
+
                 <Route
                     path='/user/dashboard'
                     element={

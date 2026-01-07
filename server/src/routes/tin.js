@@ -1,8 +1,8 @@
 import express from "express";
 import { verifyToken, authorizeRoles } from "../middleware/authMiddleware.js";
 import checkIdsUploaded from "../middleware/checkIdsUploaded.js";
-import { submitTinApplication, approveTinApplicatin, rejectTinApplication } from "../controllers/tinController.js";
-import {assignApproverOfficer} from "../middleware/assignOfficer.js";
+import { submitTinApplication, approveTinApplicatin, rejectTinApplication, finalizeTinApplication } from "../controllers/tinController.js";
+import { assignApproverOfficer } from "../middleware/assignOfficer.js";
 
 const router = express.Router();
 
@@ -13,6 +13,13 @@ router.post(
   checkIdsUploaded,
   assignApproverOfficer,
   submitTinApplication
+);
+
+router.post(
+  "/applications/:id/finalize",
+  verifyToken,
+  authorizeRoles("citizen"),
+  finalizeTinApplication
 );
 
 router.post(

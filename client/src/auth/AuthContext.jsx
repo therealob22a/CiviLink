@@ -15,6 +15,7 @@ import React, { createContext, useContext, useReducer, useCallback, useEffect } 
 import { authReducer, authActions, computePermissions } from '../reducers/authReducer.js';
 import * as authAPI from '../api/auth.api.js';
 import * as userAPI from '../api/user.api.js';
+import { registerRefreshHandler } from '../utils/api.js';
 
 const AuthContext = createContext(null);
 
@@ -44,7 +45,7 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await authAPI.login(credentials);
       const basicUserData = response.data.user;
-      
+
       // Store access token if provided (for tests)
       if (response.data.accessToken) {
         // Token is in cookies, but we can store it for API calls if needed
@@ -56,7 +57,7 @@ export const AuthProvider = ({ children }) => {
       try {
         const profileResponse = await userAPI.getUserProfile();
         const fullUserData = profileResponse.data;
-        
+
         // Use full profile data which includes officer fields
         dispatch({ type: authActions.LOGIN_SUCCESS, payload: fullUserData });
         return { success: true, data: fullUserData };
@@ -93,7 +94,7 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await authAPI.register(userData);
       const userData_response = response.data.user;
-      
+
       dispatch({ type: authActions.LOGIN_SUCCESS, payload: userData_response });
       return { success: true, data: userData_response };
     } catch (error) {
@@ -110,7 +111,7 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await authAPI.refreshToken();
       const userData = response.data.user;
-      
+
       dispatch({ type: authActions.REFRESH_TOKEN_SUCCESS, payload: userData });
       return { success: true, data: userData };
     } catch (error) {
@@ -127,7 +128,7 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await userAPI.getUserProfile();
       const userData = response.data;
-      
+
       dispatch({ type: authActions.LOAD_USER_SUCCESS, payload: userData });
       return { success: true, data: userData };
     } catch (error) {
@@ -160,6 +161,10 @@ export const AuthProvider = ({ children }) => {
 
   // Load user on mount if authenticated
   useEffect(() => {
+    // Register the refresh token handler with the API utility
+    // This allows api.js to automatically retry failed requests with valid tokens
+    registerRefreshHandler(refreshAccessToken);
+
     const initializeAuth = async () => {
       // Try to load user profile to check if we're authenticated
       const result = await loadUser();
@@ -170,7 +175,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     initializeAuth();
-  }, [loadUser]);
+  }, [loadUser, refreshAccessToken]);
 
   const value = {
     // State
@@ -179,11 +184,11 @@ export const AuthProvider = ({ children }) => {
     isLoading: state.isLoading,
     isRefreshing: state.isRefreshing,
     error: state.error,
-    
+
     // Computed
     permissions,
     role: state.user?.role,
-    
+
     // Methods
     login,
     logout,

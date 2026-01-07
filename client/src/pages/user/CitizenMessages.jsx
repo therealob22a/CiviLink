@@ -1,36 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../auth/AuthContext.jsx';
+import { useChat } from '../../auth/ChatContext.jsx';
 import AuthenticatedLayout from '../../components/layout/AuthenticatedLayout.jsx';
-import * as chatAPI from '../../api/chat.api';
 import '../../styles/user/CitizenMessages.css';
 
 function CitizenMessages() {
     const { user } = useAuth();
-    const [conversations, setConversations] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState(null);
+    const { conversations, isLoading, error, fetchConversations } = useChat();
     const [selectedId, setSelectedId] = useState(null);
 
     useEffect(() => {
         fetchConversations();
-    }, []);
-
-    const fetchConversations = async () => {
-        setIsLoading(true);
-        try {
-            const response = await chatAPI.getCitizenConversations();
-            if (response.success) {
-                setConversations(response.data);
-            } else {
-                setError(response.message || 'Failed to load messages');
-            }
-        } catch (err) {
-            setError('An error occurred while fetching messages');
-            console.error(err);
-        } finally {
-            setIsLoading(false);
-        }
-    };
+    }, [fetchConversations]);
 
     const handleSelectConversation = (id) => {
         setSelectedId(selectedId === id ? null : id);

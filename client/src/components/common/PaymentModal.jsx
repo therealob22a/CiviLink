@@ -1,150 +1,113 @@
-import React, { useState, useEffect } from 'react';
-import * as paymentAPI from '../../api/payment.api';
+import React, { useState } from 'react';
+import { usePayment } from '../../auth/PaymentContext.jsx';
 import '../../styles/components/PaymentModal.css';
 
-const PaymentModal = ({ isOpen, onClose, onPaymentVerified, applicationData }) => {
-    const [step, setStep] = useState('init'); // init, checkout, verifying, success, error
-    const [paymentInfo, setPaymentInfo] = useState(null);
-    const [isLoading, setIsLoading] = useState(false);
+const PaymentModal = ({ isOpen, onClose, application }) => {
+    const { processPayment, isProcessing: contextIsProcessing } = usePayment();
+    const [phone, setPhone] = useState('');
     const [error, setError] = useState(null);
 
-    const handleInitializePayment = async () => {
-        setIsLoading(true);
+    if (!isOpen || !application) return null;
+
+    const handlePay = async () => {
+        if (!phone) {
+            setError('Please enter your phone number');
+            return;
+        }
+
         setError(null);
-        try {
-            const response = await paymentAPI.processPayment({
-                applicationId: applicationData.id || 'pending_app', // Fallback if ID not yet generated
-                serviceType: applicationData.type,
-                phoneNumber: applicationData.phoneNumber || '0911223344', // Mock phone if missing
-                amount: applicationData.fee
-            });
 
-            if (response.success) {
-                setPaymentInfo(response.data);
-                setStep('checkout');
-            } else {
-                setError(response.message || 'Failed to initialize payment');
+        const params = new URLSearchParams({
+            appId: application._id,
+            category: application.category,
+            type: application.type
+        });
+        const returnUrl = application.returnUrl || `${window.location.origin}/user/payment-result?${params.toString()}`;
+        console.log('PaymentModal: Constructed returnUrl:', returnUrl);
+        const callbackUrl = `${window.location.origin}/api/v1/payments/webhook`;
+
+        const result = await processPayment({
+            applicationId: application._id,
+            serviceType: application.serviceType || 'general',
+            amount: application.fee || 100,
+            phoneNumber: phone,
+            returnUrl,
+            callbackUrl
+        });
+
+        if (result.success && result.checkoutUrl) {
+            // Explicitly append tx_ref to the returnUrl so we have a backup if Chapa fails to append it
+            let finalCheckoutUrl = result.checkoutUrl;
+            if (result.data?.txRef) {
+                const redirectUrl = new URL(returnUrl);
+                redirectUrl.searchParams.set('tx_ref', result.data.txRef);
+
+                // Some gateways might need this in the checkout URL itself or we just trust the returnUrl we sent
+                // But Chapa uses the return_url we provided during initialization.
             }
-        } catch (err) {
-            setError('Connection error. Please try again.');
-            console.error(err);
-        } finally {
-            setIsLoading(false);
+
+            // Redirect to Chapa
+            window.location.href = result.checkoutUrl;
+        } else {
+            setError(result.error || 'Payment initialization failed');
         }
     };
-
-    const handleCheckoutRedirect = () => {
-        if (paymentInfo?.checkoutUrl) {
-            // In a real app, we'd redirect or open in new tab
-            // window.location.href = paymentInfo.checkoutUrl;
-
-            // For this demo/stabilization, we simulate the redirect and wait for user to click "Verify"
-            window.open(paymentInfo.checkoutUrl, '_blank');
-            setStep('verifying');
-        }
-    };
-
-    const handleVerifyPayment = async () => {
-        if (!paymentInfo?.txRef) return;
-
-        setIsLoading(true);
-        try {
-            const response = await paymentAPI.verifyPayment(paymentInfo.txRef);
-            if (response.success && response.data.status === 'success') {
-                setStep('success');
-                setTimeout(() => {
-                    onPaymentVerified(response.data);
-                }, 1500);
-            } else {
-                setError('Payment not yet completed or failed. Please try again.');
-            }
-        } catch (err) {
-            setError('Verification failed. Please try again.');
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    if (!isOpen) return null;
 
     return (
         <div className="payment-modal-overlay">
             <div className="payment-modal-content">
-                <button className="close-modal-btn" onClick={onClose} style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer', color: '#94a3b8' }}>&times;</button>
+                <button className="close-modal-btn" onClick={onClose}>&times;</button>
 
                 <div className="payment-modal-header">
-                    <div className={`payment-icon ${step === 'success' ? 'payment-success-icon' : ''}`}>
-                        {step === 'success' ? (
-                            <i className="fas fa-check-circle pulse-animation"></i>
-                        ) : (
-                            <i className="fas fa-credit-card"></i>
-                        )}
+                    <div className="payment-icon">
+                        <i className="fas fa-credit-card"></i>
                     </div>
-                    <h2>
-                        {step === 'init' && 'Service Payment'}
-                        {step === 'checkout' && 'Complete Checkout'}
-                        {step === 'verifying' && 'Verifying Payment'}
-                        {step === 'success' && 'Payment Successful!'}
-                        {step === 'error' && 'Payment Error'}
-                    </h2>
+                    <h2>Service Payment</h2>
                 </div>
 
-                {step !== 'success' && (
-                    <div className="payment-details-summary">
-                        <div className="payment-row">
-                            <span className="payment-label">Service:</span>
-                            <span className="payment-value">{applicationData.type}</span>
-                        </div>
-                        <div className="payment-row">
-                            <span className="payment-label">Application ID:</span>
-                            <span className="payment-value">{applicationData.id || 'New Application'}</span>
-                        </div>
-                        <div className="payment-row">
-                            <span className="payment-label">Amount:</span>
-                            <span className="payment-value">{applicationData.fee} ETB</span>
-                        </div>
+                <div className="payment-details-summary">
+                    <div className="payment-row">
+                        <span className="payment-label">Service:</span>
+                        <span className="payment-value">{application.serviceType || 'General Service'}</span>
                     </div>
-                )}
+                    <div className="payment-row">
+                        <span className="payment-label">Application ID:</span>
+                        <span className="payment-value">{application.applicationId || application._id}</span>
+                    </div>
+                    <div className="payment-row">
+                        <span className="payment-label">Amount:</span>
+                        <span className="payment-value">{application.fee || 100} ETB</span>
+                    </div>
+                </div>
 
-                {error && <p className="payment-status-message" style={{ color: '#ef4444' }}>{error}</p>}
+                <div className="payment-form">
+                    <label htmlFor="phone">Phone Number (for Chapa)</label>
+                    <input
+                        type="tel"
+                        id="phone"
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        placeholder="09..."
+                    />
+                </div>
 
-                <div className="payment-actions">
-                    {step === 'init' && (
-                        <button className="pay-now-btn" onClick={handleInitializePayment} disabled={isLoading}>
-                            {isLoading ? <i className="fas fa-spinner fa-spin"></i> : 'Initialize Payment'}
-                        </button>
-                    )}
+                {error && <p className="payment-error-message">{error}</p>}
 
-                    {step === 'checkout' && (
-                        <>
-                            <p className="payment-status-message">Please complete the payment in the Chapa checkout window.</p>
-                            <button className="pay-now-btn" onClick={handleCheckoutRedirect}>
-                                Go to Checkout
-                            </button>
-                        </>
-                    )}
-
-                    {step === 'verifying' && (
-                        <>
-                            <p className="payment-status-message">Waiting for payment confirmation...</p>
-                            <button className="verify-payment-btn" onClick={handleVerifyPayment} disabled={isLoading}>
-                                {isLoading ? <i className="fas fa-spinner fa-spin"></i> : 'Check Payment Status'}
-                            </button>
-                        </>
-                    )}
-
-                    {step === 'success' && (
-                        <div className="payment-processing">
-                            <i className="fas fa-spinner fa-spin"></i>
-                            <p>Finalizing your application...</p>
-                        </div>
-                    )}
-
-                    {step !== 'success' && (
-                        <button className="cancel-payment-btn" onClick={onClose} disabled={isLoading}>
-                            Cancel
-                        </button>
-                    )}
+                <div className="payment-modal-footer">
+                    <button className="cancel-btn" onClick={onClose} disabled={contextIsProcessing}>
+                        Cancel
+                    </button>
+                    <button className="pay-btn" onClick={handlePay} disabled={contextIsProcessing}>
+                        {contextIsProcessing ? (
+                            <>
+                                <i className="fas fa-spinner fa-spin"></i> Processing...
+                            </>
+                        ) : (
+                            <>
+                                <i className="fas fa-credit-card"></i> Pay Now
+                            </>
+                        )}
+                    </button>
                 </div>
             </div>
         </div>

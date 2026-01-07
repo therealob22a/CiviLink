@@ -1,4 +1,4 @@
-import {API_BASE_URL_LOCAL} from '../config/backend.js';
+import { API_BASE_URL_LOCAL } from '../config/backend.js';
 
 /**
  * Normalizes API errors to a consistent format
@@ -14,7 +14,7 @@ export const normalizeError = (error) => {
       data: error.response.data
     };
   }
-  
+
   if (error instanceof Response) {
     // Fetch API error
     return {
@@ -23,7 +23,7 @@ export const normalizeError = (error) => {
       data: null
     };
   }
-  
+
   return {
     message: error.message || 'An unexpected error occurred',
     status: null,
@@ -39,7 +39,7 @@ export const normalizeError = (error) => {
  */
 export const apiRequest = async (endpoint, options = {}) => {
   const url = `${API_BASE_URL_LOCAL}${endpoint}`;
-  
+
   const config = {
     ...options,
     headers: {
@@ -51,7 +51,22 @@ export const apiRequest = async (endpoint, options = {}) => {
 
   try {
     const response = await fetch(url, config);
-    
+
+    // Handle 401 Unauthorized with Token Refresh
+    // Skip if this IS the refresh request (prevent infinite loop)
+    if (response.status === 401 && !options._retry && refreshHandler && !endpoint.includes('refresh-token')) {
+      try {
+        const refreshResult = await refreshHandler();
+        if (refreshResult && refreshResult.success) {
+          // Retry original request with _retry flag
+          return apiRequest(endpoint, { ...options, _retry: true });
+        }
+      } catch (refreshError) {
+        // Refresh failed, proceed to throw original error (or redirect)
+        // We don't throw refreshError to maintain the original 401 context if needed
+      }
+    }
+
     // Handle non-JSON responses
     const contentType = response.headers.get('content-type');
     if (!contentType || !contentType.includes('application/json')) {
@@ -75,4 +90,14 @@ export const apiRequest = async (endpoint, options = {}) => {
     // Re-throw normalized errors
     throw normalizeError(error);
   }
+};
+
+let refreshHandler = null;
+
+/**
+ * Registers a function to handle token refresh attempts
+ * @param {Function} handler - Function that returns Promise<{success: boolean}>
+ */
+export const registerRefreshHandler = (handler) => {
+  refreshHandler = handler;
 };

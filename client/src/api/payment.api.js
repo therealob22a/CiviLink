@@ -24,6 +24,17 @@ export const verifyPayment = async (txRef) => {
 };
 
 /**
+ * Get payment by application ID
+ * @param {string} applicationId - Application ID
+ * @returns {Promise<Object>} Payment info
+ */
+export const getPaymentByApplicationId = async (applicationId) => {
+    return apiRequest(`/payments/application/${applicationId}`, {
+        method: 'GET',
+    });
+};
+
+/**
  * Get payment status (citizen/officer/admin)
  * @param {string} id - Payment document ID
  * @returns {Promise<Object>} Status info

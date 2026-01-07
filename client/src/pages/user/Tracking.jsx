@@ -1,25 +1,24 @@
-/**
- * Tracking Page (Applications)
- * 
- * Displays all user applications fetched from backend.
- * Shows empty state when no applications exist.
- */
-
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../auth/AuthContext.jsx';
+import { useApplication } from '../../auth/ApplicationContext.jsx';
 import { AuthGuard } from '../../auth/guards/AuthGuard.jsx';
-import * as applicationsAPI from '../../api/applications.api.js';
 import '../../styles/user/Tracking.css';
 import Navigation2 from '../../components/Navigation2';
 import SideBar1 from '../../components/Sidebar1';
 import Footer from '../../components/Footer';
 import ApplicationDetailModal from '../../components/user/ApplicationDetailModal';
+import * as applicationsAPI from '../../api/applications.api.js'; // Keep for downloadCertificate if not in context
 
 const Tracking = () => {
   const { user } = useAuth();
-  const [applications, setApplications] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const {
+    applications,
+    isLoading,
+    error: contextError,
+    fetchApplications,
+    getApplicationDetails
+  } = useApplication();
+
   const [filter, setFilter] = useState('all');
   const [referenceNumber, setReferenceNumber] = useState('');
   const [showProgress, setShowProgress] = useState(false);
@@ -27,21 +26,7 @@ const Tracking = () => {
   const [progressSteps, setProgressSteps] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Fetch applications from backend
-  const fetchApplications = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const response = await applicationsAPI.getAllApplications();
-      setApplications(response.data || []);
-    } catch (err) {
-      setError(err.message || 'Failed to load applications');
-      setApplications([]);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
+  // Fetch applications on mount
   useEffect(() => {
     fetchApplications();
   }, [fetchApplications]);
@@ -139,27 +124,39 @@ const Tracking = () => {
   };
 
   // Track application by reference number
-  const handleTrackApplication = () => {
+  const handleTrackApplication = async () => {
     if (!referenceNumber.trim()) {
       alert('Please enter an application reference number');
       return;
     }
 
-    const app = applications.find(a => a._id === referenceNumber || a._id.toString() === referenceNumber);
-    if (app) {
-      handleViewApplication(app._id);
+    // Try finding in local list first
+    const localApp = applications.find(a => a._id === referenceNumber || a._id.toString() === referenceNumber);
+    if (localApp) {
+      handleViewApplication(localApp._id);
+      return;
+    }
+
+    // If not found locally, fetch via context
+    const result = await getApplicationDetails(referenceNumber);
+    if (result.success && result.data) {
+      // Note: getApplicationDetails stores result in context.selectedApplication 
+      // but our handleViewApplication logic uses local state 'selectedApp'.
+      // We can just use result.data here.
+      const app = result.data;
+      setSelectedApp(app);
+      setProgressSteps(getProgressSteps(app.status));
+      setIsModalOpen(true);
     } else {
       alert('Application not found. Please check the reference number.');
     }
   };
 
   // Download application certificate
-  const handleDownloadApplication = async (appId) => {
+  const handleDownloadCertificate = async (appId) => {
     try {
       const response = await applicationsAPI.downloadCertificate(appId);
 
-      // If server redirects (e.g. to Supabase signed URL), the fetch will follow it
-      // but if we want to handle it specifically:
       if (response.redirected) {
         window.open(response.url, '_blank');
         return;
@@ -181,10 +178,10 @@ const Tracking = () => {
 
   // Download payment receipt
   const handleDownloadReceipt = async (paymentId) => {
+    // ... (same as before)
     if (!paymentId) return;
     try {
       const response = await import('../../api/payment.api').then(api => api.downloadReceipt(paymentId));
-
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -203,13 +200,6 @@ const Tracking = () => {
   const handleCloseProgress = () => {
     setShowProgress(false);
     setSelectedApp(null);
-  };
-
-  // Calculate progress percentage
-  const calculateProgressPercentage = (steps) => {
-    const completedSteps = steps.filter(step => step.status === 'completed').length;
-    const totalSteps = steps.length;
-    return (completedSteps / totalSteps) * 100;
   };
 
   // Handle key press for reference number input
@@ -243,10 +233,10 @@ const Tracking = () => {
           </div>
 
           {/* Error State */}
-          {error && (
+          {contextError && (
             <div className="error-banner">
               <i className="fas fa-exclamation-circle"></i>
-              {error}
+              {contextError}
               <button onClick={fetchApplications} className="retry-btn-small">
                 Retry
               </button>
@@ -259,6 +249,7 @@ const Tracking = () => {
               <h2>Track Your Application</h2>
             </div>
 
+            {/* Search Input */}
             <div className="search-container">
               <input
                 type="text"
@@ -308,36 +299,16 @@ const Tracking = () => {
               <>
                 {/* Filters */}
                 <div className="filters">
-                  <button
-                    className={`filter-btn ${filter === 'all' ? 'active' : ''}`}
-                    onClick={() => setFilter('all')}
-                  >
-                    All Applications
-                  </button>
-                  <button
-                    className={`filter-btn ${filter === 'processing' ? 'active' : ''}`}
-                    onClick={() => setFilter('processing')}
-                  >
-                    Processing
-                  </button>
-                  <button
-                    className={`filter-btn ${filter === 'approved' ? 'active' : ''}`}
-                    onClick={() => setFilter('approved')}
-                  >
-                    Approved
-                  </button>
-                  <button
-                    className={`filter-btn ${filter === 'completed' ? 'active' : ''}`}
-                    onClick={() => setFilter('completed')}
-                  >
-                    Completed
-                  </button>
-                  <button
-                    className={`filter-btn ${filter === 'rejected' ? 'active' : ''}`}
-                    onClick={() => setFilter('rejected')}
-                  >
-                    Rejected
-                  </button>
+                  {/* ... (Filters markup remains same) ... */}
+                  {['all', 'processing', 'approved', 'completed', 'rejected'].map(status => (
+                    <button
+                      key={status}
+                      className={`filter-btn ${filter === status ? 'active' : ''}`}
+                      onClick={() => setFilter(status)}
+                    >
+                      {status.charAt(0).toUpperCase() + status.slice(1)} {status === 'all' ? 'Applications' : ''}
+                    </button>
+                  ))}
                 </div>
 
                 {/* Applications Table */}
@@ -389,7 +360,7 @@ const Tracking = () => {
                                 {app.status === 'completed' && (
                                   <button
                                     className="action-btn download"
-                                    onClick={() => handleDownloadApplication(app._id)}
+                                    onClick={() => handleDownloadCertificate(app._id)}
                                     title="Download Certificate"
                                   >
                                     <i className="fas fa-download"></i>
@@ -421,7 +392,7 @@ const Tracking = () => {
             isOpen={isModalOpen}
             onClose={() => setIsModalOpen(false)}
             application={selectedApp}
-            onDownloadCertificate={handleDownloadApplication}
+            onDownloadCertificate={handleDownloadCertificate}
             onDownloadReceipt={handleDownloadReceipt}
           />
         </div>

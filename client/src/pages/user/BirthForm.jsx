@@ -1,18 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import '../../styles/user/BirthForm.css';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import FormSideBar from '../../components/FormSideBar';
 import AuthenticatedLayout from '../../components/layout/AuthenticatedLayout';
-import { useIDGuard } from "../../auth/guards/IDGuard";
+
 import { useAuth } from '../../auth/AuthContext';
+import { useProfileAssets } from '../../auth/ProfileAssetsContext';
+import { usePayment } from '../../auth/PaymentContext.jsx';
 import PaymentModal from '../../components/common/PaymentModal';
 import * as applicationsAPI from '../../api/applications.api';
 import * as userAPI from '../../api/user.api';
 
 function BirthForm() {
-    const { user } = useAuth();
-    const { idStatus, setShowModal } = useIDGuard();
     const navigate = useNavigate();
+    const { user } = useAuth();
+    const { idStatus } = useProfileAssets();
 
     // Form state for all inputs
     const [formData, setFormData] = useState({
@@ -48,6 +50,7 @@ function BirthForm() {
         facilityAddress: ''
     });
 
+    const [applicationId, setApplicationId] = useState(null);
     const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -103,6 +106,8 @@ function BirthForm() {
         loadInitialData();
     }, [user]);
 
+
+
     // Handle input changes
     const handleInputChange = (e) => {
         const { id, value } = e.target;
@@ -112,41 +117,37 @@ function BirthForm() {
         }));
     };
 
-    // Handle form submission
-    const handlePreSubmit = (e) => {
+    // Handle form submission (Draft Save)
+    const handlePreSubmit = async (e) => {
         e.preventDefault();
 
         if (idStatus !== 'BOTH') {
-            setShowModal(true);
+            alert("You need to upload both Fayda and Kebele IDs to proceed.");
+            navigate('/user/settings');
             return;
         }
 
-        setIsPaymentModalOpen(true);
-    };
-
-    const handlePaymentVerified = async (paymentData) => {
-        setIsPaymentModalOpen(false);
         setIsSubmitting(true);
-
         try {
-            const result = await applicationsAPI.submitVitalApplication('birth', {
-                ...formData,
-                paymentId: paymentData.paymentId
-            });
-
+            const result = await applicationsAPI.submitVitalApplication('birth', formData);
             if (result.success) {
-                alert("Birth certificate application submitted successfully!");
-                navigate('/user/dashboard');
+                setApplicationId(result.applicationId);
+                // Save context for redirect recovery
+                localStorage.setItem('pending_app_id_birth', result.applicationId);
+                localStorage.setItem('pending_form_birth', JSON.stringify(formData));
+
+                setIsPaymentModalOpen(true);
             } else {
-                alert(result.message || "Failed to submit application");
+                alert(result.message || "Failed to save draft application");
             }
         } catch (error) {
-            console.error('Submission error:', error);
-            alert("Error submitting application. Please contact support.");
+            console.error('Draft save error:', error);
+            alert(error.message || "Error saving application draft");
         } finally {
             setIsSubmitting(false);
         }
     };
+
 
     return (
         <AuthenticatedLayout showSidebar={true}>
@@ -461,7 +462,11 @@ function BirthForm() {
 
                         <div className="submit-section">
                             <button type="submit" className="submit-btn" disabled={isSubmitting}>
-                                {isSubmitting ? <i className="fas fa-spinner fa-spin"></i> : <i className="fas fa-file-invoice-dollar"></i>}
+                                {isSubmitting ? (
+                                    <i className="fas fa-spinner fa-spin"></i>
+                                ) : (
+                                    <i className="fas fa-file-invoice-dollar"></i>
+                                )}
                                 {isSubmitting ? ' Submitting...' : ' Submit & Pay Fee'}
                             </button>
                             <p className="submit-info">
@@ -475,9 +480,11 @@ function BirthForm() {
             <PaymentModal
                 isOpen={isPaymentModalOpen}
                 onClose={() => setIsPaymentModalOpen(false)}
-                onPaymentVerified={handlePaymentVerified}
-                applicationData={{
-                    type: 'Birth Certificate',
+                application={{
+                    _id: applicationId,
+                    category: 'VITAL',
+                    type: 'birth',
+                    serviceType: 'birth',
                     fee: sidebarData.applicationFee,
                     phoneNumber: user?.phoneNumber || ''
                 }}

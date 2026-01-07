@@ -3,16 +3,16 @@ import { useNavigate } from 'react-router-dom';
 import '../../styles/user/TIN.css';
 import FormSideBar from '../../components/FormSideBar';
 import AuthenticatedLayout from '../../components/layout/AuthenticatedLayout';
-import { useIDGuard } from "../../auth/guards/IDGuard";
 import { useAuth } from '../../auth/AuthContext';
+import { useProfileAssets } from '../../auth/ProfileAssetsContext';
 import PaymentModal from '../../components/common/PaymentModal';
 import * as applicationsAPI from '../../api/applications.api';
 import * as userAPI from '../../api/user.api';
 
 function TIN() {
-    const { user } = useAuth();
-    const { idStatus, setShowModal } = useIDGuard();
     const navigate = useNavigate();
+    const { user } = useAuth();
+    const { idStatus } = useProfileAssets();
 
     const [formData, setFormData] = useState({
         formType: 'TIN',
@@ -33,6 +33,7 @@ function TIN() {
         confirmation: false,
     });
 
+    const [applicationId, setApplicationId] = useState(null);
     const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -76,6 +77,8 @@ function TIN() {
         loadInitialData();
     }, [user]);
 
+
+
     const sidebarData = {
         formType: "TIN Application",
         estimatedTime: "7-10 Business Days",
@@ -92,41 +95,36 @@ function TIN() {
         });
     };
 
-    const handlePreSubmit = (e) => {
+    const handlePreSubmit = async (e) => {
         e.preventDefault();
 
         if (idStatus !== 'BOTH') {
-            setShowModal(true);
+            alert("You need to upload both Fayda and Kebele IDs to proceed.");
+            navigate('/user/settings');
             return;
         }
 
-        // Open payment modal
-        setIsPaymentModalOpen(true);
-    };
-
-    const handlePaymentVerified = async (paymentData) => {
-        setIsPaymentModalOpen(false);
         setIsSubmitting(true);
-
         try {
-            const result = await applicationsAPI.submitTinApplication({
-                ...formData,
-                paymentId: paymentData.paymentId // Link payment to application
-            });
-
+            const result = await applicationsAPI.submitTinApplication(formData);
             if (result.success) {
-                alert("TIN application submitted successfully!");
-                navigate('/user/dashboard');
+                setApplicationId(result.applicationId);
+                localStorage.setItem('pending_app_id_tin', result.applicationId);
+                localStorage.setItem('pending_form_tin', JSON.stringify(formData));
+
+                setIsPaymentModalOpen(true);
             } else {
-                alert(result.message || "Failed to submit application");
+                alert(result.message || "Failed to save draft application");
             }
         } catch (error) {
-            console.error('Submission error:', error);
-            alert("Error submitting application. Please contact support.");
+            console.error('Draft save error:', error);
+            alert(error.message || "Error saving application draft");
         } finally {
             setIsSubmitting(false);
         }
     };
+
+
 
     return (
         <AuthenticatedLayout showSidebar={true}>
@@ -288,7 +286,11 @@ function TIN() {
 
                         <div className="submit-section">
                             <button type="submit" className="submit-btn" disabled={isSubmitting}>
-                                {isSubmitting ? <i className="fas fa-spinner fa-spin"></i> : <i className="fas fa-file-invoice-dollar"></i>}
+                                {isSubmitting ? (
+                                    <i className="fas fa-spinner fa-spin"></i>
+                                ) : (
+                                    <i className="fas fa-file-invoice-dollar"></i>
+                                )}
                                 {isSubmitting ? ' Submitting...' : ' Submit & Pay Fee'}
                             </button>
                             <p className="submit-info">Payment of {sidebarData.applicationFee} ETB is required before submission.</p>
@@ -300,9 +302,11 @@ function TIN() {
             <PaymentModal
                 isOpen={isPaymentModalOpen}
                 onClose={() => setIsPaymentModalOpen(false)}
-                onPaymentVerified={handlePaymentVerified}
-                applicationData={{
-                    type: 'TIN Application',
+                application={{
+                    _id: applicationId,
+                    category: 'TIN',
+                    type: 'tin',
+                    serviceType: 'tin',
                     fee: sidebarData.applicationFee,
                     phoneNumber: user?.phoneNumber || ''
                 }}

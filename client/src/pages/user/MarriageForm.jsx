@@ -1,18 +1,22 @@
 import { useState, useEffect } from "react";
 import FormSideBar from "../../components/FormSideBar";
 import '../../styles/user/MarriageForm.css';
-import { useNavigate } from "react-router-dom";
-import { useIDGuard } from "../../auth/guards/IDGuard";
+import { useNavigate, useSearchParams } from "react-router-dom";
+
 import AuthenticatedLayout from "../../components/layout/AuthenticatedLayout";
 import { useAuth } from '../../auth/AuthContext';
+import { useProfileAssets } from '../../auth/ProfileAssetsContext';
+import { usePayment } from '../../auth/PaymentContext';
 import PaymentModal from '../../components/common/PaymentModal';
 import * as applicationsAPI from '../../api/applications.api';
 import * as userAPI from '../../api/user.api';
 
 function MarriageForm() {
     const { user } = useAuth();
-    const { idStatus, setShowModal } = useIDGuard();
+    const { idStatus } = useProfileAssets();
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const { verifyPayment } = usePayment();
 
     const [formData, setFormData] = useState({
         formType: 'marriage application',
@@ -40,6 +44,7 @@ function MarriageForm() {
         marriageConfirmation: false,
     });
 
+    const [applicationId, setApplicationId] = useState(null);
     const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -55,6 +60,9 @@ function MarriageForm() {
     useEffect(() => {
         const loadInitialData = async () => {
             try {
+                // DON'T MERGE IF WE ARE RETURNING FROM PAYMENT (prevents overwrite of restored form data)
+                if (localStorage.getItem('pending_app_id_marriage')) return;
+
                 const idResult = await userAPI.getIDData();
                 if (idResult.success && idResult.data) {
                     const { fayda, kebele } = idResult.data;
@@ -87,6 +95,7 @@ function MarriageForm() {
         loadInitialData();
     }, [user]);
 
+
     const handleChange = (e) => {
         const { id, value, type, checked } = e.target;
         setFormData((prev) => ({
@@ -95,40 +104,34 @@ function MarriageForm() {
         }));
     };
 
-    const handlePreSubmit = (e) => {
+    const handlePreSubmit = async (e) => {
         e.preventDefault();
 
         if (idStatus !== 'BOTH') {
-            setShowModal(true);
+            alert("You need to upload both Fayda and Kebele IDs to proceed.");
+            navigate('/user/settings');
             return;
         }
 
-        setIsPaymentModalOpen(true);
-    };
-
-    const handlePaymentVerified = async (paymentData) => {
-        setIsPaymentModalOpen(false);
         setIsSubmitting(true);
-
         try {
-            const result = await applicationsAPI.submitVitalApplication('marriage', {
-                ...formData,
-                paymentId: paymentData.paymentId
-            });
-
+            const result = await applicationsAPI.submitVitalApplication('marriage', formData);
             if (result.success) {
-                alert("Marriage certificate application submitted successfully!");
-                navigate('/user/dashboard');
+                setApplicationId(result.applicationId);
+                localStorage.setItem('pending_app_id_marriage', result.applicationId);
+                localStorage.setItem('pending_form_marriage', JSON.stringify(formData));
+                setIsPaymentModalOpen(true);
             } else {
-                alert(result.message || "Failed to submit application");
+                alert(result.message || "Failed to save draft application");
             }
         } catch (error) {
-            console.error('Submission error:', error);
-            alert("Error submitting application. Please contact support.");
+            console.error('Draft save error:', error);
+            alert(error.message || "Error saving application draft");
         } finally {
             setIsSubmitting(false);
         }
     };
+
 
     return (
         <AuthenticatedLayout showSidebar={true}>
@@ -484,7 +487,11 @@ function MarriageForm() {
                         {/* Submit Section */}
                         <div className="submit-section">
                             <button type="submit" className="submit-btn" disabled={isSubmitting}>
-                                {isSubmitting ? <i className="fas fa-spinner fa-spin"></i> : <i className="fas fa-file-invoice-dollar"></i>}
+                                {isSubmitting ? (
+                                    <i className="fas fa-spinner fa-spin"></i>
+                                ) : (
+                                    <i className="fas fa-file-invoice-dollar"></i>
+                                )}
                                 {isSubmitting ? ' Submitting...' : ' Submit & Pay Fee'}
                             </button>
                             <p className="submit-info">
@@ -498,9 +505,11 @@ function MarriageForm() {
             <PaymentModal
                 isOpen={isPaymentModalOpen}
                 onClose={() => setIsPaymentModalOpen(false)}
-                onPaymentVerified={handlePaymentVerified}
-                applicationData={{
-                    type: 'Marriage Certificate',
+                application={{
+                    _id: applicationId,
+                    category: 'VITAL',
+                    type: 'marriage',
+                    serviceType: 'marriage',
                     fee: sidebarData.applicationFee,
                     phoneNumber: user?.phoneNumber || ''
                 }}
